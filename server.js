@@ -75,12 +75,12 @@ function Tralis(theTrails) {
     this.location = theTrails.location;
     this.length = theTrails.length;
     this.stars = theTrails.stars;
-    this.star_votes = theTrails.star_votes;
+    this.star_votes = theTrails.starVotes;
     this.summary = theTrails.summary;
     this.trail_url = theTrails.trail_url;
-    this.conditions = theTrails.conditions;
-    this.condition_date = theTrails.condition_date;
-    this.condition_time = theTrails.condition_time;
+    this.conditions = theTrails.conditionStatus;
+    this.condition_date = theTrails.conditionDate.slice(0,10);
+    this.condition_time = theTrails.conditionDate.slice(12,19);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
