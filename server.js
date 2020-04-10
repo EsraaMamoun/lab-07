@@ -6,7 +6,7 @@ const express = require('express');
 const cors = require('cors');
 const superagent = require('superagent');
 
-const PORT = process.env.PORT;
+const PORT = process.env.PORT || 4000;
 const app = express();
 app.use(cors());
 
@@ -17,22 +17,16 @@ app.get('/', (request, response) => {
 app.get('/location', locationHandler);
 app.get('/weather', weatherHandler);
 app.get('/trails', trailsHandler);
+app.use('*', notFoundHandler);
+app.use(errorHandler);
 
-
-
-function notFoundHandler(request, response) {
-    response.status(404).send('NOT FOUND!');
-}
-
-function errorHandler(error, request, response) {
-    response.status(500).send(error);
-}
 
 /////////////////////////////////////////////////Location//////////////////////////////////////////////////////
 
 function locationHandler(request, response) {
     const city = request.query.city;
-    superagent(`https://eu1.locationiq.com/v1/search.php?key=${process.env.GEOCODE_API_KEY}&q=${city}&format=json`).then((res) => {
+    superagent(`https://eu1.locationiq.com/v1/search.php?key=${process.env.GEOCODE_API_KEY}&q=${city}&format=json`)
+    .then((res) => {
         const geoData = res.body;
         const locationData = new Location(city, geoData);
         response.status(200).json(locationData);
@@ -49,8 +43,8 @@ function Location(city, geoData) {
 //////////////////////////////////////////////////Weather//////////////////////////////////////////////////////
 
 function weatherHandler(request, response) {
-    superagent(`https://api.weatherbit.io/v2.0/forecast/daily?city=${request.query.search_query}&key=${process.env.WEATHER_API_KEY}`).then((weatherRes) => {
-        console.log(weatherRes);
+    superagent(`https://api.weatherbit.io/v2.0/forecast/daily?city=${request.query.search_query}&key=${process.env.WEATHER_API_KEY}`)
+    .then((weatherRes) => {
         const theWeather = weatherRes.body.data.map((darkskyData) => {
             return new Weather(darkskyData);
         });
@@ -64,11 +58,12 @@ function Weather(darkskyData) {
     this.time = (new Date(darkskyData.valid_date)).toDateString();
 }
 
-/////////////////////////////////////////////////Trais/////////////////////////////////////////////////////////
+/////////////////////////////////////////////////Tralis/////////////////////////////////////////////////////////
 
 function trailsHandler(request, response) {
-    superagent(`https://www.hikingproject.com/data/get-trails?lat=${request.query.latitude}&lon=${request.query.longitude}&maxDistance=10&key=${process.env.TRAILS_API_KEY}`).then((trailsRes) => {
-        const trailsData = trailsRes.body.map((theTrails) => {
+    superagent(`https://www.hikingproject.com/data/get-trails?lat=${request.query.latitude}&lon=${request.query.longitude}&maxDistance=400&key=${process.env.TRAIL_API_KEY}`)
+    .then((trailsRes) => {
+        const trailsData = trailsRes.body.trails.map((theTrails) => {
             return new Tralis(theTrails);
         });
         response.status(200).json(trailsData);
@@ -80,16 +75,23 @@ function Tralis(theTrails) {
     this.location = theTrails.location;
     this.length = theTrails.length;
     this.stars = theTrails.stars;
-    this.star_votes = theTrails.star_votes;
+    this.star_votes = theTrails.starVotes;
     this.summary = theTrails.summary;
     this.trail_url = theTrails.trail_url;
-    this.conditions = theTrails.conditions;
-    this.condition_date = theTrails.condition_date;
-    this.condition_time = theTrails.condition_time;
+    this.conditions = theTrails.conditionStatus;
+    this.condition_date = theTrails.conditionDate.slice(0,10);
+    this.condition_time = theTrails.conditionDate.slice(12,19);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-app.listen(PORT, () => console.log(`App is listening on ${PORT}.`));
-app.use(errorHandler);
-app.use('*', notFoundHandler);
+
+function notFoundHandler(request, response) {
+    response.status(404).send('NOT FOUND!');
+}
+
+function errorHandler(error, request, response) {
+    response.status(500).send(error);
+}
+
+app.listen(PORT, () => console.log(`App is listening on ${PORT}`));
